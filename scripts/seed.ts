@@ -74,22 +74,27 @@ async function seedDatabase() {
       `INSERT INTO team_regions (team_id, region_code) VALUES ($1, $2), ($1, $3)`,
       [teamBeta.team_id, 'eu-west-1', 'eu-central-1']
     );
-    console.log('[seed script]: Assigned regions.');
+    const teamRegions = await client.query('SELECT t.team_name, tr.region_code FROM team_regions tr JOIN teams t ON tr.team_id = t.team_id');
+    console.table(teamRegions.rows);
 
     // --- (Optional) Create some initial 'Pending' events ---
     console.log('[seed script]: Inserting sample events...');
-     await client.query(
-        `INSERT INTO events (region_code, external_event_id, event_payload, status) VALUES
-         ($1, $2, $3, 'Pending'),
-         ($4, $5, $6, 'Pending'),
-         ($7, $8, $9, 'Pending')`,
-        [
-            'us-east-1', 'ext-001', '{"type": "test", "data": "abc"}',
-            'ca-central-1', 'ext-002', '{"type": "test", "data": "def"}',
-            'eu-west-1', 'ext-003', '{"type": "test", "data": "ghi"}'
-        ]
-    );
-    console.log('[seed script]: Inserted sample events.');
+    const eventsToInsert = [
+      { region_code: 'us-east-1', external_event_id: 'ext-001', event_payload: {"type": "test_metadata", "summary": "US East Event 1", "data_ref": "/regional/us-east-1/events/ext-001"}, status: 'Pending' },
+      { region_code: 'ca-central-1', external_event_id: 'ext-002', event_payload: {"type": "test_metadata", "summary": "CA Central Event 1", "data_ref": "/regional/ca-central-1/events/ext-002"}, status: 'Pending' },
+      { region_code: 'eu-west-1', external_event_id: 'ext-003', event_payload: {"type": "test_metadata", "summary": "EU West Event 1", "data_ref": "/regional/eu-west-1/events/ext-003"}, status: 'Pending' },
+      { region_code: 'us-east-1', external_event_id: 'ext-004', event_payload: {"type": "test_metadata", "summary": "US East Event 2", "data_ref": "/regional/us-east-1/events/ext-004"}, status: 'Pending' },
+      { region_code: 'eu-central-1', external_event_id: 'ext-005', event_payload: {"type": "test_metadata", "summary": "EU Central Event 1", "data_ref": "/regional/eu-central-1/events/ext-005"}, status: 'Pending' }
+    ];
+
+    for (const event of eventsToInsert) {
+        await client.query(
+            `INSERT INTO events (region_code, external_event_id, event_payload, status) VALUES ($1, $2, $3, $4)`,
+            [event.region_code, event.external_event_id, JSON.stringify(event.event_payload), event.status]
+        );
+    }
+    const insertedEvents = await client.query('SELECT event_id, region_code, external_event_id, status, event_payload FROM events ORDER BY ingested_at DESC LIMIT 5');
+    console.table(insertedEvents.rows);
 
 
     await client.query('COMMIT');
