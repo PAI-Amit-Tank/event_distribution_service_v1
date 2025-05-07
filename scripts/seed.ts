@@ -38,41 +38,41 @@ async function seedDatabase() {
       `INSERT INTO teams (team_name, description, batch_size) VALUES ($1, $2, $3) RETURNING team_id`,
       ['Team Beta', 'Handles EU events', 5]
     );
-    const teamAlphaId = teamAlphaRes.rows[0].team_id;
-    const teamBetaId = teamBetaRes.rows[0].team_id;
-    console.log(`[seed script]: Created Team Alpha (ID: ${teamAlphaId}), Team Beta (ID: ${teamBetaId})`);
+    const teamAlpha = teamAlphaRes.rows[0];
+    const teamBeta = teamBetaRes.rows[0];
+    console.table([teamAlpha, teamBeta]);
 
     // --- Create Users ---
     console.log('[seed script]: Inserting users...');
     // User for Team Alpha
     const user1Res = await client.query(
       `INSERT INTO users (username, email, team_id, display_name) VALUES ($1, $2, $3, $4) RETURNING user_id`,
-      ['alice_a', 'alice@example.com', teamAlphaId, 'Alice Alpha']
+      ['alice_a', 'alice@example.com', teamAlpha.team_id, 'Alice Alpha']
     );
     // User for Team Beta
     const user2Res = await client.query(
       `INSERT INTO users (username, email, team_id, display_name) VALUES ($1, $2, $3, $4) RETURNING user_id`,
-      ['bob_b', 'bob@example.com', teamBetaId, 'Bob Beta']
+      ['bob_b', 'bob@example.com', teamBeta.team_id, 'Bob Beta']
     );
      // Another user for Team Alpha
      const user3Res = await client.query(
         `INSERT INTO users (username, email, team_id, display_name) VALUES ($1, $2, $3, $4) RETURNING user_id`,
-        ['charlie_a', 'charlie@example.com', teamAlphaId, 'Charlie Alpha']
+        ['charlie_a', 'charlie@example.com', teamAlpha.team_id, 'Charlie Alpha']
       );
-    const user1Id = user1Res.rows[0].user_id;
-    const user2Id = user2Res.rows[0].user_id;
-    const user3Id = user3Res.rows[0].user_id;
-    console.log(`[seed script]: Created User Alice (ID: ${user1Id}), Bob (ID: ${user2Id}), Charlie (ID: ${user3Id})`);
+    const userAlice = user1Res.rows[0];
+    const userBob = user2Res.rows[0];
+    const userCharlie = user3Res.rows[0];
+    console.table([userAlice, userBob, userCharlie]);
 
     // --- Assign Regions to Teams ---
     console.log('[seed script]: Assigning regions to teams...');
     await client.query(
       `INSERT INTO team_regions (team_id, region_code) VALUES ($1, $2), ($1, $3)`,
-      [teamAlphaId, 'us-east-1', 'ca-central-1']
+      [teamAlpha.team_id, 'us-east-1', 'ca-central-1']
     );
     await client.query(
       `INSERT INTO team_regions (team_id, region_code) VALUES ($1, $2), ($1, $3)`,
-      [teamBetaId, 'eu-west-1', 'eu-central-1']
+      [teamBeta.team_id, 'eu-west-1', 'eu-central-1']
     );
     console.log('[seed script]: Assigned regions.');
 
